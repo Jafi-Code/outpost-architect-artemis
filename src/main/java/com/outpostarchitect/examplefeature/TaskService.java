@@ -1,4 +1,4 @@
-package com.example.examplefeature;
+package com.outpostarchitect.examplefeature;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Pageable;

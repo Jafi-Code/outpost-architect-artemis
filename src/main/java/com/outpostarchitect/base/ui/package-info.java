@@ -1,4 +1,4 @@
 @NullMarked
-package com.example.base.ui;
+package com.outpostarchitect.base.ui;
 
 import org.jspecify.annotations.NullMarked;

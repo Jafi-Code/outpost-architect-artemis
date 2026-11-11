@@ -1,4 +1,4 @@
-package com.example.examplefeature.ui;
+package com.outpostarchitect.examplefeature.ui;
 
 import com.vaadin.browserless.SpringBrowserlessTest;
 import com.vaadin.flow.component.notification.Notification;

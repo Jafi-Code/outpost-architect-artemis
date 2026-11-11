@@ -1,8 +1,8 @@
-package com.example.examplefeature.ui;
+package com.outpostarchitect.examplefeature.ui;
 
-import com.example.base.ui.ViewTitle;
-import com.example.examplefeature.Task;
-import com.example.examplefeature.TaskService;
+import com.outpostarchitect.base.ui.ViewTitle;
+import com.outpostarchitect.examplefeature.Task;
+import com.outpostarchitect.examplefeature.TaskService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;

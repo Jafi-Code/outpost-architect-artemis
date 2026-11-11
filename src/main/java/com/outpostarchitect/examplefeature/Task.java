@@ -1,4 +1,4 @@
-package com.example.examplefeature;
+package com.outpostarchitect.examplefeature;
 
 import jakarta.persistence.*;
 import org.jspecify.annotations.Nullable;
