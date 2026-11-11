@@ -17,6 +17,8 @@ public class GameState {
     private final double baseIllumination;
     private int shieldingLevel = 1;
     private GameStatus status = GameStatus.IN_PROGRESS;
+    private boolean conservePowerThisTurn = false;
+    private boolean boostHeatingThisTurn = false;
 
     private final List<String> missionLog = new ArrayList<>();
 
@@ -57,6 +59,12 @@ public class GameState {
 
     public GameStatus getStatus() { return status; }
     public void setStatus(GameStatus v) { this.status = v; }
+
+    public boolean isConservePowerThisTurn() { return conservePowerThisTurn; }
+    public void setConservePowerThisTurn(boolean v) { this.conservePowerThisTurn = v; }
+
+    public boolean isBoostHeatingThisTurn() { return boostHeatingThisTurn; }
+    public void setBoostHeatingThisTurn(boolean v) { this.boostHeatingThisTurn = v; }
 
     public List<String> getMissionLog() { return missionLog; }
 

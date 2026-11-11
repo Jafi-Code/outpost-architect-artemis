@@ -5,8 +5,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class GameService {
 
-    private static final int BASE_SOLAR_AT_FULL_SUN   = 30;
-    private static final int LIFE_SUPPORT_DRAW        = 20;
+    // Harder balance
+    private static final int BASE_SOLAR_AT_FULL_SUN   = 35;
+    private static final int LIFE_SUPPORT_DRAW        = 30;
     private static final int LOW_POWER_THRESHOLD      = 20;
     private static final int LOW_HEAT_THRESHOLD       = 30;
     private static final int LOW_CROPS_THRESHOLD      = 20;
@@ -15,9 +16,10 @@ public class GameService {
     private static final int LOW_CROPS_CREW_PENALTY   = 3;
     private static final int RADIATION_CREW_PENALTY   = 1;
 
-    private static final int LONG_SHADOW_START_DAY   = 8;
-    private static final int LONG_SHADOW_END_DAY     = 12;
-    private static final double LONG_SHADOW_FACTOR   = 0.55;
+    // Deadlier shadow
+    private static final int LONG_SHADOW_START_DAY   = 7;
+    private static final int LONG_SHADOW_END_DAY     = 14;
+    private static final double LONG_SHADOW_FACTOR   = 0.30;
 
     public GameState advanceDay(GameState state) {
         if (state.getStatus() != GameStatus.IN_PROGRESS) {
@@ -26,10 +28,26 @@ public class GameService {
 
         applyScheduledEvents(state);
         applySolarAndPower(state);
+        
+        // Apply player actions
+        if (state.isBoostHeatingThisTurn()) {
+            if (state.getPower() >= 10) {
+                state.setPower(state.getPower() - 10);
+                state.setHeat(state.getHeat() + 15);
+                state.log("Action: Diverted 10 power to heating systems.");
+            } else {
+                state.log("Action failed: Not enough power to boost heating.");
+            }
+        }
+
         applyCascade(state);
         applyRadiationExposure(state);
 
         state.setDay(state.getDay() + 1);
+        
+        // Reset actions for next turn
+        state.setConservePowerThisTurn(false);
+        state.setBoostHeatingThisTurn(false);
 
         checkEndConditions(state);
         return state;
@@ -50,8 +68,15 @@ public class GameService {
 
     private void applySolarAndPower(GameState s) {
         int solar = (int) Math.round(BASE_SOLAR_AT_FULL_SUN * s.getIllumination());
-        s.setPower(s.getPower() + solar - LIFE_SUPPORT_DRAW);
-        s.log("Solar generation: +" + solar + ". Life support draw: -" + LIFE_SUPPORT_DRAW + ".");
+        
+        int draw = LIFE_SUPPORT_DRAW;
+        if (s.isConservePowerThisTurn()) {
+            draw -= 10;
+            s.log("Action: Conserved power (Life support draw reduced to " + draw + ").");
+        }
+
+        s.setPower(s.getPower() + solar - draw);
+        s.log("Solar generation: +" + solar + ". Life support draw: -" + draw + ".");
     }
 
     private void applyCascade(GameState s) {
