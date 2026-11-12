@@ -23,6 +23,12 @@ public class CrisisView extends VerticalLayout {
     private final CrisisService crisisService;
     private  MissionState state;
     private final VerticalLayout mainContent;
+    private final Span statsHud = new Span();
+    private final Span powerHud = new Span();
+    private final Span foodHud = new Span();
+    private final Span crewHud = new Span();
+    private final Span moraleHud = new Span();
+    private final Span partsHud = new Span();
 
     @Autowired
     public CrisisView(CrisisService crisisService) {
@@ -42,21 +48,30 @@ public class CrisisView extends VerticalLayout {
                 .set("background-position", "center")
                 .set("font-family", "'Inter', sans-serif");
 
-        // Header
+        // --- HUD Header ---
         HorizontalLayout header = new HorizontalLayout();
         header.setWidthFull();
         header.setPadding(true);
-        header.getStyle().set("background-color", "rgba(10, 22, 40, 0.9)").set("border-bottom", "1px solid #1F2E45");
+        header.setSpacing(true);
+        header.getStyle().set("background-color", "rgba(10, 22, 40, 0.95)").set("border-bottom", "2px solid #1F2E45");
         
         Image logoSmall = new Image("images/logo.png", "Logo");
         logoSmall.setHeight("30px");
         
-        Span missionText = new Span("ARES-01 · LUNAR SOUTH POLE");
-        missionText.getStyle().set("color", "#8B9BB4").set("font-size", "0.9rem").set("letter-spacing", "2px");
-        
-        header.add(logoSmall, missionText);
+        statsHud.getStyle()
+                .set("font-family", "'JetBrains Mono', monospace")
+                .set("font-size", "1rem")
+                .set("font-weight", "700");
+        statsHud.add(
+                powerHud, new Span(" | "),
+                foodHud, new Span(" | "),
+                crewHud, new Span(" | "),
+                moraleHud, new Span(" | "),
+                partsHud);
+
+        header.add(logoSmall, statsHud);
         header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.expand(missionText);
+        header.expand(statsHud);
         header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
         // Main Content Container
@@ -73,10 +88,23 @@ public class CrisisView extends VerticalLayout {
 
     private void loadCurrentState() {
         mainContent.removeAll();
+        updateStatsHud();
 
         // Check Win/Lose Conditions
         if (state.crew <= 0) {
             showDebrief(false, "Crew health reached zero. Mission failed.");
+            return;
+        }
+        if (state.morale <= 0) {
+            showDebrief(false, "The crew has mutinied. They refuse to follow your orders. Mission failed.");
+            return;
+        }
+        if (state.food <= 0) {
+            showDebrief(false, "The crew starved. Mission failed.");
+            return;
+        }
+        if (state.power <= 0) {
+            showDebrief(false, "Power failure. The habitat froze. Mission failed.");
             return;
         }
         if (state.day > 30) {
@@ -84,13 +112,40 @@ public class CrisisView extends VerticalLayout {
             return;
         }
 
-        Crisis crisis = crisisService.getCrisisForDay(state.day);
+        Crisis crisis = crisisService.getCrisisForDay(state);
 
         if (crisis != null) {
             renderCrisis(crisis);
         } else {
             renderQuietDay();
         }
+    }
+
+    private void updateStatsHud() {
+        powerHud.setText("POWER: " + state.power + "%");
+        powerHud.getStyle().set("color", healthColor(state.power));
+
+        foodHud.setText("FOOD: " + state.food + "%");
+        foodHud.getStyle().set("color", healthColor(state.food));
+
+        crewHud.setText("CREW: " + state.crew + "%");
+        crewHud.getStyle().set("color", healthColor(state.crew));
+
+        moraleHud.setText("MORALE: " + state.morale + "%");
+        moraleHud.getStyle().set("color", "#D946EF");
+
+        partsHud.setText("PARTS: " + state.spareParts);
+        partsHud.getStyle().set("color", "#8B9BB4");
+    }
+
+    private String healthColor(int value) {
+        if (value > 60) {
+            return "#4ADE80";
+        }
+        if (value > 30) {
+            return "#FFB347";
+        }
+        return "#FF5C5C";
     }
 
     private void renderCrisis(Crisis crisis) {
@@ -207,31 +262,44 @@ public class CrisisView extends VerticalLayout {
     }
 
     private void renderQuietDay() {
-        // If it's not a crisis day, let the player advance time.
-        Span dayBadge = new Span("DAY " + state.day + " / 30");
-        dayBadge.getStyle().set("color", "#00D4E5").set("font-weight", "700").set("letter-spacing", "3px");
+        Span dayBadge = new Span("DAY " + state.day + " / 30 · ROUTINE OPERATIONS");
+        dayBadge.getStyle().set("color", "#4ADE80").set("font-weight", "700").set("letter-spacing", "3px");
         
         H1 title = new H1("ALL SYSTEMS NOMINAL");
         title.getStyle().set("font-family", "'Space Grotesk', sans-serif").set("color", "#F4F6FA");
         
-        Paragraph desc = new Paragraph("The outpost is operating smoothly. The crew is conducting routine maintenance and scientific experiments. Prepare for the next phase of the mission.");
+        Paragraph desc = new Paragraph("The outpost is operating smoothly. Use this time to prepare for the next phase. How should the crew spend their time?");
         desc.getStyle().set("color", "#8B9BB4").set("font-size", "1.2rem");
 
-        Button advanceBtn = new Button("ADVANCE TO NEXT PHASE");
-        advanceBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        advanceBtn.getStyle()
-                .set("background-color", "#FFB347")
-                .set("color", "#0A1628")
-                .set("font-weight", "700")
-                .set("padding", "12px 24px")
-                .set("margin-top", "20px");
-
-        advanceBtn.addClickListener(e -> {
-            state.day += 3; // Skip a few days
+        Button restBtn = new Button("REST & RECOVER (+10 CREW)");
+        restBtn.setWidthFull();
+        restBtn.getStyle()
+                .set("background-color", "#1F2E45")
+                .set("color", "#00D4E5")
+                .set("padding", "16px");
+        restBtn.addClickListener(e -> {
+            state.crew = Math.min(100, state.crew + 10);
+            state.day += 3;
             loadCurrentState();
         });
 
-        mainContent.add(dayBadge, title, desc, advanceBtn);
+        Button workBtn = new Button("CONDUCT EFFICIENCY DRILLS (+10 POWER)");
+        workBtn.setWidthFull();
+        workBtn.getStyle()
+                .set("background-color", "#1F2E45")
+                .set("color", "#FFB347")
+                .set("padding", "16px");
+        workBtn.addClickListener(e -> {
+            state.power = Math.min(100, state.power + 10);
+            state.day += 3;
+            loadCurrentState();
+        });
+
+        VerticalLayout choices = new VerticalLayout(restBtn, workBtn);
+        choices.setPadding(false);
+        choices.setWidthFull();
+
+        mainContent.add(dayBadge, title, desc, choices);
     }
 
     private void resolveDecision(Crisis crisis, Decision decision) {
@@ -257,19 +325,69 @@ public class CrisisView extends VerticalLayout {
         title.getStyle()
                 .set("font-family", "'Space Grotesk', sans-serif")
                 .set("color", success ? "#4ADE80" : "#FF5C5C")
-                .set("font-size", "3rem");
+                .set("font-size", "3rem")
+                .set("margin-bottom", "0");
 
-        Paragraph desc = new Paragraph(message);
-        desc.getStyle().set("color", "#F4F6FA").set("font-size", "1.2rem");
+        Paragraph reason = new Paragraph(message);
+        reason.getStyle()
+                .set("color", "#F4F6FA")
+                .set("font-size", "1.2rem")
+                .set("margin-bottom", "30px");
 
-        Button restartBtn = new Button("RETURN TO TITLE");
+        H3 logTitle = new H3("COMMANDER'S LOG");
+        logTitle.getStyle().set("color", "#FFB347").set("letter-spacing", "2px");
+
+        VerticalLayout logEntries = new VerticalLayout();
+        logEntries.setSpacing(true);
+        logEntries.setPadding(true);
+        logEntries.getStyle()
+                .set("background-color", "rgba(17, 30, 51, 0.9)")
+                .set("border-left", "4px solid #00D4E5")
+                .set("border-radius", "8px")
+                .set("width", "100%");
+
+        for (String entry : state.decisionHistory) {
+            Paragraph paragraph = new Paragraph(entry);
+            paragraph.getStyle().set("color", "#F4F6FA").set("margin", "0");
+            logEntries.add(paragraph);
+        }
+
+        String reflection = "I don't know if we'll make it. ";
+        if (state.flags.contains("greenhouseCrippled")) {
+            reflection += "I sacrificed the greenhouse to save power. Now the crew is starving. ";
+        }
+        if (state.flags.contains("waterCrippled")) {
+            reflection += "The water recycler is dead. We're living on fumes. ";
+        }
+        if (state.flags.contains("solarCrippled")) {
+            reflection += "The solar array is still broken. Every day we lose more power. ";
+        }
+        if (success && state.flags.isEmpty()) {
+            reflection = "We made it through without crippling a single major system. "
+                    + "The crew trusted me, and I didn't let them down.";
+        }
+
+        Paragraph reflectionParagraph = new Paragraph(reflection);
+        reflectionParagraph.getStyle()
+                .set("color", "#8B9BB4")
+                .set("font-style", "italic")
+                .set("margin-top", "20px");
+
+        Button restartBtn = new Button("TRY AGAIN");
+        restartBtn.getStyle()
+                .set("background-color", "#00D4E5")
+                .set("color", "#0A1628")
+                .set("font-weight", "700")
+                .set("margin-top", "20px");
         restartBtn.addClickListener(e -> UI.getCurrent().navigate(""));
 
-        VerticalLayout debriefBox = new VerticalLayout(title, desc, restartBtn);
+        VerticalLayout debriefBox = new VerticalLayout(
+                title, reason, logTitle, logEntries, reflectionParagraph, restartBtn);
         debriefBox.setAlignItems(FlexComponent.Alignment.CENTER);
         debriefBox.setPadding(true);
-        debriefBox.getStyle().set("background-color", "rgba(17, 30, 51, 0.9)").set("border-radius", "12px");
+        debriefBox.setMaxWidth("800px");
 
+        mainContent.removeAll();
         mainContent.add(debriefBox);
     }
 }
