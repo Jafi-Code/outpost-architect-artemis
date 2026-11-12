@@ -8,10 +8,41 @@ public class CrisisService {
 
     public Crisis getCrisisForDay(MissionState state) {
         if (state.day == 1) return getTutorial(state);
-        if (state.day == 7) return getLongShadow(state);
+        if (state.day == 7 && !state.powerGridSolved) return getLongShadow(state);
         if (state.day == 12) return getWaterFailure(state);
         if (state.day == 20) return getRadiationWarning(state);
         return null; 
+    }
+
+    public MissionState resolvePowerGrid(MissionState state, int heat, int greenhouse, int comms) {
+        if (heat < 0 || greenhouse < 0 || comms < 0
+                || heat > 100 || greenhouse > 100 || comms > 100
+                || heat + greenhouse + comms != 100) {
+            throw new IllegalArgumentException("Power allocations must be between 0 and 100 and total exactly 100 MW.");
+        }
+        if (state.powerGridSolved || state.day != 7) {
+            throw new IllegalStateException("The power grid can only be resolved once on day 7.");
+        }
+
+        if (heat < 40) {
+            state.crew = Math.max(0, state.crew - 20);
+            state.flags.add("crewFroze");
+        }
+        if (greenhouse < 30) {
+            state.food = Math.max(0, state.food - 30);
+            state.flags.add("greenhouseCrippled");
+        }
+        if (comms < 20) {
+            state.morale = Math.max(0, state.morale - 20);
+            state.flags.add("commsLost");
+        }
+
+        state.powerGridSolved = true;
+        state.day = 12;
+        state.logDecision(String.format(
+                "Power Grid: Heat %d, Greenhouse %d, Comms %d",
+                heat, greenhouse, comms));
+        return state;
     }
 
     public MissionState resolveDecision(MissionState state, Crisis crisis, Decision decision) {

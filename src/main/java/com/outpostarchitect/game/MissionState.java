@@ -14,6 +14,7 @@ public class MissionState {
     public int crew = 90;
     public int morale = 70; 
     public int spareParts = 1; // Only 1 for the whole game!
+    public boolean powerGridSolved = false;
     
     // Persistent Ripple Effect Flags
     public Set<String> flags = new HashSet<>();

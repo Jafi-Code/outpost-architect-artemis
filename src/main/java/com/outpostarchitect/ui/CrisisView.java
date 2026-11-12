@@ -7,17 +7,21 @@ import com.outpostarchitect.game.MissionState;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.slider.IntegerSlider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Route("play")
 @PageTitle("Crisis Protocol")
+@StyleSheet("styles.css")
 public class CrisisView extends VerticalLayout {
 
     private final CrisisService crisisService;
@@ -149,6 +153,13 @@ public class CrisisView extends VerticalLayout {
     }
 
     private void renderCrisis(Crisis crisis) {
+        if ("crisis_1".equals(crisis.id)) {
+            renderPowerGrid(crisis);
+            return;
+        }
+
+        addClassName("crisis-alert");
+
         // Day Indicator
         Span dayBadge = new Span("DAY " + state.day + " / 30 · INCIDENT REPORT");
         dayBadge.getStyle()
@@ -259,6 +270,145 @@ public class CrisisView extends VerticalLayout {
         }
 
         mainContent.add(dayBadge, title, desc, commsBox, decisionPrompt, choicesLayout);
+    }
+
+    private void renderPowerGrid(Crisis crisis) {
+        addClassName("crisis-alert");
+
+        Span dayBadge = new Span("DAY 7 / 30 · EMERGENCY ALLOCATION");
+        dayBadge.getStyle()
+                .set("color", "#FF5C5C")
+                .set("font-weight", "700")
+                .set("letter-spacing", "3px");
+
+        H1 title = new H1(crisis.title);
+        title.getStyle()
+                .set("font-family", "'Space Grotesk', sans-serif")
+                .set("color", "#F4F6FA");
+
+        Paragraph desc = new Paragraph(
+                "The solar array is failing. You have 100 Megawatts to distribute. "
+                        + "If any system drops too low, the mission is compromised.");
+        desc.getStyle().set("color", "#F4F6FA").set("font-size", "1.2rem");
+
+        Span totalLabel = new Span();
+        totalLabel.getStyle()
+                .set("font-size", "1.5rem")
+                .set("font-weight", "700")
+                .set("color", "#FFB347")
+                .set("margin-bottom", "20px");
+
+        SliderControl heatControl = createSlider(
+                "HABITAT HEATING", 40, "Minimum 40 MW to keep crew alive", 40);
+        SliderControl greenhouseControl = createSlider(
+                "GREENHOUSE", 30, "Minimum 30 MW to keep crops alive", 35);
+        SliderControl commsControl = createSlider(
+                "COMMS & LIFE SUPPORT", 20, "Minimum 20 MW to maintain oxygen", 25);
+
+        Button confirmBtn = new Button("ENGAGE POWER GRID");
+        confirmBtn.setWidthFull();
+        confirmBtn.getStyle()
+                .set("background-color", "#00D4E5")
+                .set("color", "#0A1628")
+                .set("font-weight", "700")
+                .set("font-size", "1.2rem")
+                .set("padding", "16px")
+                .set("margin-top", "30px");
+
+        Runnable updateTotal = () -> {
+            int total = heatControl.slider().getValue()
+                    + greenhouseControl.slider().getValue()
+                    + commsControl.slider().getValue();
+            int remaining = 100 - total;
+            totalLabel.setText(remaining < 0
+                    ? "OVER ALLOCATION: " + -remaining + " MW"
+                    : "REMAINING POWER: " + remaining + " MW");
+            totalLabel.getStyle().set("color", remaining < 0 ? "#FF5C5C" : "#FFB347");
+            confirmBtn.setEnabled(total == 100);
+        };
+
+        heatControl.slider().addValueChangeListener(e -> updateTotal.run());
+        greenhouseControl.slider().addValueChangeListener(e -> updateTotal.run());
+        commsControl.slider().addValueChangeListener(e -> updateTotal.run());
+        updateTotal.run();
+
+        confirmBtn.addClickListener(e -> {
+            int heat = heatControl.slider().getValue();
+            int greenhouse = greenhouseControl.slider().getValue();
+            int comms = commsControl.slider().getValue();
+            int total = heat + greenhouse + comms;
+
+            if (total != 100) {
+                Notification.show("Allocate exactly 100 MW before engaging the power grid.");
+                return;
+            }
+
+            state = crisisService.resolvePowerGrid(state, heat, greenhouse, comms);
+
+            Dialog outcomeDialog = new Dialog();
+            outcomeDialog.setHeaderTitle("POWER GRID RESOLVED");
+            StringBuilder outcomeText = new StringBuilder("You distributed the power. ");
+            if (state.flags.contains("greenhouseCrippled")) {
+                outcomeText.append("The greenhouse froze. We lost our crops. ");
+            }
+            if (state.flags.contains("crewFroze")) {
+                outcomeText.append("The habitat got too cold. The crew is suffering. ");
+            }
+            if (state.flags.contains("commsLost")) {
+                outcomeText.append("Communications failed. The crew feels abandoned. ");
+            }
+            if (!state.flags.contains("greenhouseCrippled")
+                    && !state.flags.contains("crewFroze")
+                    && !state.flags.contains("commsLost")) {
+                outcomeText.append("The crew survived the night.");
+            }
+
+            outcomeDialog.add(new Paragraph(outcomeText.toString()));
+            Button continueBtn = new Button("ACKNOWLEDGE", event -> {
+                outcomeDialog.close();
+                loadCurrentState();
+            });
+            outcomeDialog.getFooter().add(continueBtn);
+            outcomeDialog.open();
+        });
+
+        mainContent.add(
+                dayBadge, title, desc, totalLabel,
+                heatControl.layout(), greenhouseControl.layout(),
+                commsControl.layout(), confirmBtn);
+    }
+
+    private SliderControl createSlider(String title, int minimum, String helpText, int initialValue) {
+        Span titleSpan = new Span(title);
+        titleSpan.getStyle()
+                .set("font-weight", "700")
+                .set("color", "#00D4E5")
+                .set("display", "block");
+
+        Span helpSpan = new Span(helpText);
+        helpSpan.getStyle()
+                .set("font-size", "0.8rem")
+                .set("color", "#8B9BB4")
+                .set("display", "block")
+                .set("margin-bottom", "8px");
+
+        IntegerSlider slider = new IntegerSlider(0, 100);
+        slider.setValue(initialValue);
+        slider.setWidthFull();
+        slider.setStep(1);
+        slider.getElement().setAttribute(
+                "aria-description", "Minimum allocation: " + minimum + " MW. " + helpText);
+        slider.getStyle().set("padding-bottom", "20px");
+
+        VerticalLayout container = new VerticalLayout(titleSpan, helpSpan, slider);
+        container.setPadding(false);
+        container.setSpacing(false);
+        container.setWidthFull();
+
+        return new SliderControl(container, slider);
+    }
+
+    private record SliderControl(VerticalLayout layout, IntegerSlider slider) {
     }
 
     private void renderQuietDay() {
