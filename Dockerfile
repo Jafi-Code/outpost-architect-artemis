@@ -1,6 +1,7 @@
 FROM ghcr.io/jqlang/jq:latest AS jq-stage
 
-FROM eclipse-temurin:25-jdk AS build
+# 1. Fixed Java version to 21 (matching your pom.xml)
+FROM eclipse-temurin:21-jdk AS build
 COPY --from=jq-stage /jq /usr/bin/jq
 # Test that jq works after copying
 RUN jq --version
@@ -9,6 +10,9 @@ ENV HOME=/app
 RUN mkdir -p $HOME
 WORKDIR $HOME
 COPY . $HOME
+
+# 2. Fix Windows CRLF line endings and make mvnw executable for Linux
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
 
 # If you have a Vaadin Pro key, pass it as a secret with id "proKey":
 #
@@ -29,7 +33,8 @@ RUN --mount=type=cache,target=/root/.m2 \
 RUN cp target/*.jar application.jar && \
     java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
-FROM eclipse-temurin:25-jre-alpine
+# 3. Fixed Java version to 21 for the runtime
+FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -S app && adduser -S app -G app
 USER app
 WORKDIR /application
