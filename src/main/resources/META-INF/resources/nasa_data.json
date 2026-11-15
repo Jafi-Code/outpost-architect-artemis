@@ -1,0 +1,9 @@
+{
+  "site_name": "Ridge Site A",
+  "lroc_illumination": "72.5%",
+  "lroc_source": "LROC WAC South Pole Illumination Map",
+  "cracter_dose": "0.0037 cGy/day",
+  "cracter_source": "CRaTER LET Spectra, LRO",
+  "eclss_water_recovery": "90%",
+  "eclss_source": "ISS ECLSS Water Recovery System"
+}

@@ -1,39 +1,396 @@
-/* Add your styles here */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap");
+
+:root {
+  --navy-bg: #0a1628;
+  --deck-bg: #111e33;
+  --cyan: #00d4e5;
+  --amber: #ffb347;
+  --red: #ff5c5c;
+  --green: #4ade80;
+  --text-main: #f4f6fa;
+  --text-muted: #8b9bb4;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html,
 body {
-  margin: 0;
+  width: 100%;
   min-height: 100%;
-  background-color: #0a1628;
 }
 
-@keyframes flash-red {
+body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--navy-bg);
+  color: var(--text-main);
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Customizing Vaadin Buttons */
+vaadin-button {
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+}
+
+vaadin-button:hover:not([disabled]) {
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+  box-shadow: 0 0 15px rgba(0, 212, 229, 0.4);
+}
+
+vaadin-button:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+/* Customizing Vaadin Sliders (The Power Grid) */
+vaadin-slider {
+  padding-bottom: 20px;
+}
+
+vaadin-slider::part(track) {
+  background: #1f2e45;
+  border-radius: 4px;
+  height: 8px;
+}
+
+vaadin-slider::part(bar) {
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+vaadin-slider::part(handle) {
+  background: var(--text-main);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 15px var(--cyan);
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+}
+
+/* Customizing Dialogs (Mission Reports) */
+vaadin-dialog-overlay::part(overlay) {
+  background-color: var(--deck-bg);
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 40px rgba(0, 212, 229, 0.15);
+  border-radius: 12px;
+  font-family: "JetBrains Mono", monospace;
+}
+
+vaadin-dialog-overlay::part(header) {
+  background-color: rgba(0, 212, 229, 0.1);
+  border-bottom: 1px solid var(--cyan);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.title-screen {
+  height: 100vh;
+  min-height: 100svh;
+  overflow-y: auto;
+  background-color: var(--navy-bg);
+}
+
+.title-overlay {
+  min-height: 100%;
+  padding: clamp(16px, 4vw, 40px);
+  gap: 12px;
+}
+
+.title-logo {
+  max-width: min(60vw, 220px);
+  object-fit: contain;
+}
+
+.title-heading,
+.title-subheading {
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.title-start:hover:not([disabled]) {
+  color: var(--navy-bg);
+  background-color: var(--cyan);
+}
+
+.game-view {
+  height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.game-header {
+  z-index: 1;
+  flex: 0 0 auto;
+  gap: 16px;
+  backdrop-filter: blur(12px);
+}
+
+.game-logo {
+  flex: 0 0 auto;
+  order: 0;
+}
+
+.reset-button {
+  flex: 0 0 auto;
+  order: 2;
+  border: 1px solid rgba(255, 92, 92, 0.45);
+  border-radius: 4px;
+  background: rgba(255, 92, 92, 0.08);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.reset-button:hover:not([disabled]) {
+  border-color: var(--red);
+  color: var(--red);
+  box-shadow: 0 0 12px rgba(255, 92, 92, 0.2);
+}
+
+.game-hud {
+  min-width: 0;
+  order: 1;
+}
+
+.hud-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(78px, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.game-content {
+  width: calc(100% - 48px);
+  max-width: 900px;
+  min-height: 0;
+  margin: clamp(12px, 3vh, 28px) auto 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(0, 212, 229, 0.2);
+  border-radius: 16px;
+  background: rgba(10, 22, 40, 0.92);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.32);
+  scrollbar-color: var(--cyan) rgba(17, 30, 51, 0.8);
+}
+
+.game-content h1 {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.game-content p {
+  max-width: 72ch;
+  overflow-wrap: anywhere;
+}
+
+.choice-list {
+  gap: 12px;
+}
+
+.action-card-content {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.action-card-image {
+  width: clamp(64px, 12vw, 100px);
+  height: auto;
+  aspect-ratio: 2 / 3;
+}
+
+.action-card-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.power-grid-panel {
+  gap: 12px;
+}
+
+.power-slider-card {
+  min-width: 0;
+}
+
+.terminal-text {
+  font-family: "JetBrains Mono", monospace;
+  line-height: 1.6;
+}
+
+.hud-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 84px;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 4px 12px;
+  background: rgba(17, 30, 51, 0.8);
+  border: 1px solid #1f2e45;
+  border-radius: 4px;
+}
+
+.hud-stat-bar {
+  height: 4px;
+  overflow: hidden;
+  background: rgba(139, 155, 180, 0.25);
+  border-radius: 2px;
+}
+
+.hud-stat-bar > div {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+vaadin-button.action-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+vaadin-button.action-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(0, 212, 229, 0.3);
+}
+
+vaadin-button.action-card:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+@keyframes typing {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.typing-effect {
+  overflow-wrap: anywhere;
+  animation: typing 1.4s steps(40, end) both;
+}
+
+@keyframes screen-shake {
   0% {
-    box-shadow: inset 0 0 0 rgba(255, 92, 92, 0);
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
+  }
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+  30% {
+    transform: translate(3px, 2px) rotate(0deg);
+  }
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
   }
   50% {
-    box-shadow: inset 0 0 100px rgba(255, 92, 92, 0.5);
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+  70% {
+    transform: translate(3px, 1px) rotate(-1deg);
+  }
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
   }
   100% {
-    box-shadow: inset 0 0 0 rgba(255, 92, 92, 0);
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
+}
+.shake {
+  animation: screen-shake 0.5s;
+  animation-iteration-count: 1;
+}
+
+@media (max-width: 760px) {
+  .game-header {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .game-hud {
+    flex: 1 1 100%;
+    width: 100%;
+    order: 2;
+  }
+
+  .reset-button {
+    order: 1;
+  }
+
+  .hud-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .game-content {
+    width: calc(100% - 24px);
+    margin: 12px auto;
   }
 }
 
-.crisis-alert {
-  animation: flash-red 2s ease-in-out;
+@media (max-width: 480px) {
+  .hud-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hud-stat:last-child {
+    grid-column: span 2;
+  }
+
+  .game-content {
+    border-radius: 12px;
+  }
+
+  .action-card-content {
+    align-items: flex-start;
+  }
 }
 
-.app-logo {
-  border-radius: min(40%, var(--vaadin-radius-m));
-  margin-inline-start: var(--vaadin-padding-inline-container);
+@media (hover: none) {
+  vaadin-button:hover:not([disabled]) {
+    transform: none;
+    filter: none;
+    box-shadow: none;
+  }
 }
 
-.app-name {
-  font-weight: var(--aura-font-weight-semibold);
-  font-size: var(--aura-font-size-l);
-}
-
-.app-footer {
-  color: var(--vaadin-text-color-secondary);
-  font-size: var(--aura-font-size-s);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

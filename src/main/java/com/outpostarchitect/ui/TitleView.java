@@ -2,7 +2,6 @@ package com.outpostarchitect.ui;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -15,6 +14,7 @@ import com.vaadin.flow.router.Route;
 public class TitleView extends VerticalLayout {
 
     public TitleView() {
+        addClassName("title-screen");
         setSizeFull();
         setPadding(false);
         setSpacing(false);
@@ -30,6 +30,7 @@ public class TitleView extends VerticalLayout {
 
         // Dark overlay so text is readable
         VerticalLayout overlay = new VerticalLayout();
+        overlay.addClassName("title-overlay");
         overlay.setSizeFull();
         overlay.setAlignItems(FlexComponent.Alignment.CENTER);
         overlay.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -37,36 +38,45 @@ public class TitleView extends VerticalLayout {
 
         // Logo & Text
         Image logo = new Image("images/logo.png", "Outpost Architect");
+        logo.addClassName("title-logo");
         logo.setHeight("100px");
 
         Span title = new Span("CRISIS PROTOCOL");
+        title.addClassName("title-heading");
+        title.addClassName("fade-in");
         title.getStyle()
                 .set("font-family", "'Space Grotesk', sans-serif")
-                .set("font-size", "3rem")
+                .set("font-size", "clamp(2rem, 8vw, 3rem)")
                 .set("font-weight", "700")
                 .set("color", "#FFB347") // Signal Amber
-                .set("letter-spacing", "8px")
+                .set("letter-spacing", "clamp(2px, 1.3vw, 8px)")
                 .set("margin-top", "20px");
 
         Span subtitle = new Span("THE LONG SHADOW");
+        subtitle.addClassName("title-subheading");
+        subtitle.addClassName("fade-in");
         subtitle.getStyle()
                 .set("font-family", "'Space Grotesk', sans-serif")
-                .set("font-size", "1.5rem")
+                .set("font-size", "clamp(1rem, 4vw, 1.5rem)")
                 .set("color", "#00D4E5") // Mission Cyan
-                .set("letter-spacing", "12px")
+                .set("letter-spacing", "clamp(2px, 1.5vw, 12px)")
                 .set("margin-bottom", "40px");
 
         Button startBtn = new Button("INITIATE MISSION");
-        startBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        startBtn.addClassName("title-start");
+        startBtn.setWidth("min(300px, calc(100vw - 48px))");
+        startBtn.setHeight("60px");
         startBtn.getStyle()
-                .set("background-color", "#00D4E5")
-                .set("color", "#0A1628")
+                .set("background-color", "transparent")
+                .set("color", "var(--cyan)")
+                .set("border", "2px solid var(--cyan)")
+                .set("font-family", "'Space Grotesk', sans-serif")
                 .set("font-weight", "700")
                 .set("font-size", "1.2rem")
-                .set("letter-spacing", "2px")
-                .set("padding", "15px 40px")
-                .set("border-radius", "8px")
-                .set("cursor", "pointer");
+                .set("letter-spacing", "4px")
+                .set("border-radius", "4px")
+                .set("cursor", "pointer")
+                .set("box-shadow", "0 0 15px rgba(0, 212, 229, 0.2) inset");
 
         startBtn.addClickListener(e -> UI.getCurrent().navigate("play"));
 

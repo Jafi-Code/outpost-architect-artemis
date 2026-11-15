@@ -28,11 +28,6 @@ public class CrisisView extends VerticalLayout {
     private  MissionState state;
     private final VerticalLayout mainContent;
     private final Span statsHud = new Span();
-    private final Span powerHud = new Span();
-    private final Span foodHud = new Span();
-    private final Span crewHud = new Span();
-    private final Span moraleHud = new Span();
-    private final Span partsHud = new Span();
 
     @Autowired
     public CrisisView(CrisisService crisisService) {
@@ -40,6 +35,7 @@ public class CrisisView extends VerticalLayout {
         this.state = new MissionState();
         this.mainContent = new VerticalLayout();
 
+        addClassName("game-view");
         setSizeFull();
         setPadding(false);
         setSpacing(false);
@@ -54,36 +50,39 @@ public class CrisisView extends VerticalLayout {
 
         // --- HUD Header ---
         HorizontalLayout header = new HorizontalLayout();
+        header.addClassName("game-header");
         header.setWidthFull();
         header.setPadding(true);
         header.setSpacing(true);
         header.getStyle().set("background-color", "rgba(10, 22, 40, 0.95)").set("border-bottom", "2px solid #1F2E45");
         
         Image logoSmall = new Image("images/logo.png", "Logo");
+        logoSmall.addClassName("game-logo");
         logoSmall.setHeight("30px");
         
+        statsHud.addClassName("game-hud");
         statsHud.getStyle()
                 .set("font-family", "'JetBrains Mono', monospace")
                 .set("font-size", "1rem")
                 .set("font-weight", "700");
-        statsHud.add(
-                powerHud, new Span(" | "),
-                foodHud, new Span(" | "),
-                crewHud, new Span(" | "),
-                moraleHud, new Span(" | "),
-                partsHud);
 
-        header.add(logoSmall, statsHud);
+        Button resetButton = new Button("RESET MISSION", e -> UI.getCurrent().navigate(""));
+        resetButton.addClassName("reset-button");
+        resetButton.getElement().setAttribute("aria-label", "Reset mission and return to the title screen");
+
+        header.add(logoSmall, statsHud, resetButton);
         header.setAlignItems(FlexComponent.Alignment.CENTER);
         header.expand(statsHud);
         header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
         // Main Content Container
+        mainContent.addClassName("game-content");
         mainContent.setMaxWidth("900px");
         mainContent.setWidthFull();
+        mainContent.setMinHeight("0");
         mainContent.setPadding(true);
         mainContent.setSpacing(true);
-        mainContent.getStyle().set("margin-top", "40px");
+        setFlexGrow(1, mainContent);
 
         add(header, mainContent);
         
@@ -126,33 +125,30 @@ public class CrisisView extends VerticalLayout {
     }
 
     private void updateStatsHud() {
-        powerHud.setText("POWER: " + state.power + "%");
-        powerHud.getStyle().set("color", healthColor(state.power));
+        String powerColor = state.power < 30 ? "#FF5C5C" : (state.power < 60 ? "#FFB347" : "#00D4E5");
+        String foodColor = state.food < 30 ? "#FF5C5C" : (state.food < 60 ? "#FFB347" : "#4ADE80");
+        String crewColor = state.crew < 30 ? "#FF5C5C" : (state.crew < 60 ? "#FFB347" : "#00D4E5");
+        String moraleColor = state.morale < 30 ? "#FF5C5C" : (state.morale < 60 ? "#FFB347" : "#D946EF");
 
-        foodHud.setText("FOOD: " + state.food + "%");
-        foodHud.getStyle().set("color", healthColor(state.food));
-
-        crewHud.setText("CREW: " + state.crew + "%");
-        crewHud.getStyle().set("color", healthColor(state.crew));
-
-        moraleHud.setText("MORALE: " + state.morale + "%");
-        moraleHud.getStyle().set("color", "#D946EF");
-
-        partsHud.setText("PARTS: " + state.spareParts);
-        partsHud.getStyle().set("color", "#8B9BB4");
-    }
-
-    private String healthColor(int value) {
-        if (value > 60) {
-            return "#4ADE80";
-        }
-        if (value > 30) {
-            return "#FFB347";
-        }
-        return "#FF5C5C";
+        statsHud.getElement().setProperty("innerHTML",
+                String.format(
+                        "<div class='hud-stats'>"
+                                + "<div class='hud-stat' style='color:%1$s'>PWR: %2$d%%<div class='hud-stat-bar'><div style='width:%2$d%%;background-color:%1$s'></div></div></div>"
+                                + "<div class='hud-stat' style='color:%3$s'>FOOD: %4$d%%<div class='hud-stat-bar'><div style='width:%4$d%%;background-color:%3$s'></div></div></div>"
+                                + "<div class='hud-stat' style='color:%5$s'>CREW: %6$d%%<div class='hud-stat-bar'><div style='width:%6$d%%;background-color:%5$s'></div></div></div>"
+                                + "<div class='hud-stat' style='color:%7$s'>MORALE: %8$d%%<div class='hud-stat-bar'><div style='width:%8$d%%;background-color:%7$s'></div></div></div>"
+                                + "<div class='hud-stat' style='color:var(--text-muted)'>PARTS: %9$d</div>"
+                                + "</div>",
+                        powerColor, state.power,
+                        foodColor, state.food,
+                        crewColor, state.crew,
+                        moraleColor, state.morale,
+                        state.spareParts));
     }
 
     private void renderCrisis(Crisis crisis) {
+        mainContent.addClassName("fade-in");
+
         if ("crisis_1".equals(crisis.id)) {
             renderPowerGrid(crisis);
             return;
@@ -162,6 +158,7 @@ public class CrisisView extends VerticalLayout {
 
         // Day Indicator
         Span dayBadge = new Span("DAY " + state.day + " / 30 · INCIDENT REPORT");
+        dayBadge.addClassName("fade-in");
         dayBadge.getStyle()
                 .set("color", "#FF5C5C") // Solar Red
                 .set("font-weight", "700")
@@ -170,14 +167,17 @@ public class CrisisView extends VerticalLayout {
 
         // Crisis Title
         H1 title = new H1(crisis.title);
+        title.addClassName("fade-in");
         title.getStyle()
                 .set("font-family", "'Space Grotesk', sans-serif")
                 .set("color", "#F4F6FA")
                 .set("margin", "0")
-                .set("font-size", "2.5rem");
+                .set("font-size", "clamp(1.75rem, 5vw, 2.5rem)");
 
         // Description
         Paragraph desc = new Paragraph(crisis.description);
+        desc.addClassName("fade-in");
+        desc.addClassName("typing-effect");
         desc.getStyle()
                 .set("color", "#F4F6FA")
                 .set("font-size", "1.2rem")
@@ -222,19 +222,22 @@ public class CrisisView extends VerticalLayout {
 
         // Decisions
         H3 decisionPrompt = new H3("HOW SHOULD WE RESPOND?");
+        decisionPrompt.addClassName("fade-in");
         decisionPrompt.getStyle().set("color", "#FFB347").set("letter-spacing", "2px").set("font-size", "1rem");
 
         VerticalLayout choicesLayout = new VerticalLayout();
+        choicesLayout.addClassName("choice-list");
         choicesLayout.setSpacing(true);
         choicesLayout.setPadding(false);
         choicesLayout.setWidthFull();
 
         for (Decision decision : crisis.choices) {
             Button choiceBtn = new Button();
+            choiceBtn.addClassName("action-card");
             choiceBtn.setWidthFull();
             choiceBtn.getStyle()
                     .set("background-color", "rgba(31, 46, 69, 0.95)")
-                    .set("border", "1px solid #1F2E45")
+                    .set("border", "1px solid #00D4E5")
                     .set("border-radius", "8px")
                     .set("padding", "16px")
                     .set("text-align", "left")
@@ -242,10 +245,14 @@ public class CrisisView extends VerticalLayout {
                     .set("color", "#F4F6FA")
                     .set("height", "auto");
 
+            Image actionImage = new Image(actionCardImageFor(decision), decision.label + " action card");
+            actionImage.addClassName("action-card-image");
+            actionImage.getStyle().set("object-fit", "contain").set("flex-shrink", "0");
+
             Span choiceTitle = new Span(decision.label);
             choiceTitle.getStyle()
                     .set("font-weight", "700")
-                    .set("font-size", "1.1rem")
+                    .set("font-size", "1.2rem")
                     .set("color", "#00D4E5")
                     .set("display", "block");
             
@@ -256,12 +263,19 @@ public class CrisisView extends VerticalLayout {
                     .set("display", "block")
                     .set("margin-top", "6px");
 
-            VerticalLayout btnContent = new VerticalLayout(choiceTitle, choiceTradeOff);
-            btnContent.setPadding(false);
-            btnContent.setSpacing(false);
-            btnContent.setAlignItems(FlexComponent.Alignment.START);
-            btnContent.setWidthFull();
-            choiceBtn.setIcon(btnContent);
+            VerticalLayout cardText = new VerticalLayout(choiceTitle, choiceTradeOff);
+            cardText.addClassName("action-card-copy");
+            cardText.setPadding(false);
+            cardText.setSpacing(false);
+            cardText.setAlignItems(FlexComponent.Alignment.START);
+            cardText.setWidthFull();
+
+            HorizontalLayout cardContent = new HorizontalLayout(actionImage, cardText);
+            cardContent.addClassName("action-card-content");
+            cardContent.setWidthFull();
+            cardContent.setAlignItems(FlexComponent.Alignment.CENTER);
+            cardContent.setSpacing(true);
+            choiceBtn.setIcon(cardContent);
             choiceBtn.getElement().setAttribute("aria-label",
                     decision.label + ". " + decision.tradeOff);
 
@@ -272,16 +286,28 @@ public class CrisisView extends VerticalLayout {
         mainContent.add(dayBadge, title, desc, commsBox, decisionPrompt, choicesLayout);
     }
 
+    private String actionCardImageFor(Decision decision) {
+        return switch (decision.label) {
+            case "PUSH FORWARD IMMEDIATELY", "PROTECT LIFE SUPPORT" -> "images/action-heat.png";
+            case "MAINTAIN AGRICULTURE" -> "images/action-greenhouse.png";
+            case "CONSERVE WATER", "ABORT THE EVA" -> "images/action-conserve.png";
+            default -> "images/action-inspect.png";
+        };
+    }
+
     private void renderPowerGrid(Crisis crisis) {
+        mainContent.addClassName("fade-in");
         addClassName("crisis-alert");
 
         Span dayBadge = new Span("DAY 7 / 30 · EMERGENCY ALLOCATION");
+        dayBadge.addClassName("fade-in");
         dayBadge.getStyle()
                 .set("color", "#FF5C5C")
                 .set("font-weight", "700")
                 .set("letter-spacing", "3px");
 
         H1 title = new H1(crisis.title);
+        title.addClassName("fade-in");
         title.getStyle()
                 .set("font-family", "'Space Grotesk', sans-serif")
                 .set("color", "#F4F6FA");
@@ -289,6 +315,8 @@ public class CrisisView extends VerticalLayout {
         Paragraph desc = new Paragraph(
                 "The solar array is failing. You have 100 Megawatts to distribute. "
                         + "If any system drops too low, the mission is compromised.");
+        desc.addClassName("fade-in");
+        desc.addClassName("typing-effect");
         desc.getStyle().set("color", "#F4F6FA").set("font-size", "1.2rem");
 
         Span totalLabel = new Span();
@@ -304,6 +332,16 @@ public class CrisisView extends VerticalLayout {
                 "GREENHOUSE", 30, "Minimum 30 MW to keep crops alive", 35);
         SliderControl commsControl = createSlider(
                 "COMMS & LIFE SUPPORT", 20, "Minimum 20 MW to maintain oxygen", 25);
+
+        VerticalLayout sliderContainer = new VerticalLayout(
+                heatControl.layout(), greenhouseControl.layout(), commsControl.layout());
+        sliderContainer.addClassName("power-grid-panel");
+        sliderContainer.setWidthFull();
+        sliderContainer.setPadding(true);
+        sliderContainer.getStyle()
+                .set("background", "rgba(17, 30, 51, 0.4)")
+                .set("border-radius", "12px")
+                .set("border", "1px solid #1F2E45");
 
         Button confirmBtn = new Button("ENGAGE POWER GRID");
         confirmBtn.setWidthFull();
@@ -374,21 +412,24 @@ public class CrisisView extends VerticalLayout {
 
         mainContent.add(
                 dayBadge, title, desc, totalLabel,
-                heatControl.layout(), greenhouseControl.layout(),
-                commsControl.layout(), confirmBtn);
+                sliderContainer, confirmBtn);
     }
 
     private SliderControl createSlider(String title, int minimum, String helpText, int initialValue) {
         Span titleSpan = new Span(title);
         titleSpan.getStyle()
+                .set("font-family", "'Space Grotesk', sans-serif")
                 .set("font-weight", "700")
-                .set("color", "#00D4E5")
+                .set("color", "var(--cyan)")
+                .set("font-size", "1.1rem")
+                .set("letter-spacing", "1px")
                 .set("display", "block");
 
         Span helpSpan = new Span(helpText);
         helpSpan.getStyle()
-                .set("font-size", "0.8rem")
-                .set("color", "#8B9BB4")
+                .set("font-family", "'JetBrains Mono', monospace")
+                .set("font-size", "0.75rem")
+                .set("color", "var(--text-muted)")
                 .set("display", "block")
                 .set("margin-bottom", "8px");
 
@@ -400,12 +441,18 @@ public class CrisisView extends VerticalLayout {
                 "aria-description", "Minimum allocation: " + minimum + " MW. " + helpText);
         slider.getStyle().set("padding-bottom", "20px");
 
-        VerticalLayout container = new VerticalLayout(titleSpan, helpSpan, slider);
-        container.setPadding(false);
-        container.setSpacing(false);
-        container.setWidthFull();
+        VerticalLayout sliderLayout = new VerticalLayout(titleSpan, helpSpan, slider);
+        sliderLayout.addClassName("power-slider-card");
+        sliderLayout.setPadding(false);
+        sliderLayout.setSpacing(false);
+        sliderLayout.setWidthFull();
+        sliderLayout.getStyle()
+                .set("background", "rgba(17, 30, 51, 0.5)")
+                .set("padding", "16px")
+                .set("border-radius", "8px")
+                .set("border-left", "2px solid var(--cyan)");
 
-        return new SliderControl(container, slider);
+        return new SliderControl(sliderLayout, slider);
     }
 
     private record SliderControl(VerticalLayout layout, IntegerSlider slider) {
@@ -413,12 +460,16 @@ public class CrisisView extends VerticalLayout {
 
     private void renderQuietDay() {
         Span dayBadge = new Span("DAY " + state.day + " / 30 · ROUTINE OPERATIONS");
+        dayBadge.addClassName("fade-in");
         dayBadge.getStyle().set("color", "#4ADE80").set("font-weight", "700").set("letter-spacing", "3px");
         
         H1 title = new H1("ALL SYSTEMS NOMINAL");
+        title.addClassName("fade-in");
         title.getStyle().set("font-family", "'Space Grotesk', sans-serif").set("color", "#F4F6FA");
         
         Paragraph desc = new Paragraph("The outpost is operating smoothly. Use this time to prepare for the next phase. How should the crew spend their time?");
+        desc.addClassName("fade-in");
+        desc.addClassName("typing-effect");
         desc.getStyle().set("color", "#8B9BB4").set("font-size", "1.2rem");
 
         Button restBtn = new Button("REST & RECOVER (+10 CREW)");
@@ -472,19 +523,22 @@ public class CrisisView extends VerticalLayout {
 
     private void showDebrief(boolean success, String message) {
         H1 title = new H1(success ? "MISSION COMPLETE" : "MISSION FAILED");
+        title.addClassName("fade-in");
         title.getStyle()
                 .set("font-family", "'Space Grotesk', sans-serif")
                 .set("color", success ? "#4ADE80" : "#FF5C5C")
-                .set("font-size", "3rem")
+                .set("font-size", "clamp(2rem, 7vw, 3rem)")
                 .set("margin-bottom", "0");
 
         Paragraph reason = new Paragraph(message);
+        reason.addClassName("fade-in");
         reason.getStyle()
                 .set("color", "#F4F6FA")
                 .set("font-size", "1.2rem")
                 .set("margin-bottom", "30px");
 
         H3 logTitle = new H3("COMMANDER'S LOG");
+        logTitle.addClassName("fade-in");
         logTitle.getStyle().set("color", "#FFB347").set("letter-spacing", "2px");
 
         VerticalLayout logEntries = new VerticalLayout();
@@ -518,6 +572,7 @@ public class CrisisView extends VerticalLayout {
         }
 
         Paragraph reflectionParagraph = new Paragraph(reflection);
+        reflectionParagraph.addClassName("fade-in");
         reflectionParagraph.getStyle()
                 .set("color", "#8B9BB4")
                 .set("font-style", "italic")
